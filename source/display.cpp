@@ -22,7 +22,7 @@ using namespace Eigen;
 using namespace std;
 
 
-Arm l;
+Arm arm;
 Vector2f targetPoint = Vector2f::Zero();
 
 
@@ -90,8 +90,8 @@ void glut_motion(int32_t _x, int32_t _y)
 
 void glut_timer(int32_t i) // 10ms call
 {
-	l.update();
-	if (l.isTargetResolved()) { targetPoint = l.getPointWithinRange(); l.moveToPoint(targetPoint); }
+	arm.update();
+	if (arm.isTargetResolved()) { targetPoint = arm.getPointWithinRange(); arm.moveToPoint(targetPoint); }
 
 	glutTimerFunc(10, glut_timer, i);
 	glutPostRedisplay();
@@ -128,7 +128,7 @@ void glut_display()
     glRotatef(beta, 1, 0, 0);
 
     // draw on window
-	l.draw();
+	arm.draw();
 
     glPushMatrix();
     glColor3f(0.0f, 0.0f, 1.0f);
@@ -143,7 +143,7 @@ void glut_display()
 
 void Display::init(int argc, char** argv)
 {
-	srand ( time(NULL) );
+	srand (time(NULL));
 	
 	// constructing structure using links
     for(int i = 1; i <= 5; i++){
@@ -151,7 +151,7 @@ void Display::init(int argc, char** argv)
         Link *l = new Link(c);
         l->mAngle = 3.14f/4;
         l->mLength = 20;
-        ::l.addLink(l);
+        ::arm.addLink(l);
     }
 
     // GLUT initialization.
