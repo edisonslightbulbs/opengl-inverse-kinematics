@@ -12,7 +12,6 @@ MatrixXf Arm::pseudoInverse()
     MatrixXf j = jacobian();
     MatrixXf jjtInv = (j * j.transpose());
     jjtInv = jjtInv.inverse();
-
     return (j.transpose() * jjtInv);
 }
 
@@ -54,12 +53,23 @@ void Arm::moveToPoint(const VectorXf position)
   mResolveTarget = true;
 }
 
-void Arm::draw()
+/* n.b. :: 
+ * OpenGL keeps a stack of matrices to quickly apply and remove transformations. 
+ * 
+ * - glPushMatrix : copies the top matrix and pushes it onto the stack,
+ * - glPopMatrix  : pops the top matrix off the stack. 
+ *
+ * All transformation functions (glScaled, etc.) function on the top matrix, and the top matrix 
+ * is what all rendering commands use to transform their data. By pushing and popping matrices, one 
+ * can control what transformations apply to which objects, as well as apply transformations to groups 
+ * of objects, and easily reverse the transformations so that they don't affect other objects.
+ */
+
+void Arm::draw() // drawing the arm position   << Review as at 28. August 2018
 {
-    // drawing the new arm position
-    glPushMatrix();
-    glTranslatef(mBasePosition(0),mBasePosition(1),0.0f);
-    glutSolidSphere(2.0f, 20, 20);
+    glPushMatrix();  // Creates matrix 1 on the top
+    glTranslatef(mBasePosition(0),mBasePosition(1),0.0f);  // Applies translation to matrix 1
+    glutSolidSphere(2.0f, 20, 20);  // Draws a sphere with translation <2.0f, 20, 20>
 
     // represent the joints by a sphere (on the tips of every arm-structure)
     for (int i = 0; i < mList.size(); i++){
@@ -73,7 +83,7 @@ void Arm::draw()
 		// drawing the sphere-joints
         glutSolidSphere(1.5, 20, 20);
     }
-    glPopMatrix();
+    glPopMatrix();  // Deletes matrix 1
 }
 
 void Arm::moveBy(float dx, float dy)
@@ -87,7 +97,7 @@ void Arm::moveBy(float dx, float dy)
   
     dAngles = pseudoInverse() * dPosition;
     
-    // Adding to the angles, the difference required to move to the new position
+    // Adding the difference required to move to the new position to the angles
     for (int i = 0; i < mList.size(); i++){
         mList[i]->mAngle += dAngles(i);
 	}

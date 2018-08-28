@@ -22,8 +22,8 @@ using namespace Eigen;
 using namespace std;
 
 
-Arm arm;
-Vector2f targetPoint = Vector2f::Zero();
+Arm arm;  // arm instance
+Vector2f targetPoint = Vector2f::Zero();  //target point --- ideally at a later stage the target point should be ditermined by the position of the mouse
 
 
 // window size
@@ -91,7 +91,9 @@ void glut_motion(int32_t _x, int32_t _y)
 void glut_timer(int32_t i) // 10ms call
 {
 	arm.update();
-	if (arm.isTargetResolved()) { targetPoint = arm.getPointWithinRange(); arm.moveToPoint(targetPoint); }
+	if (arm.isTargetResolved()){ 
+		targetPoint = arm.getPointWithinRange(); arm.moveToPoint(targetPoint); 
+	}
 
 	glutTimerFunc(10, glut_timer, i);
 	glutPostRedisplay();
@@ -143,7 +145,7 @@ void glut_display()
 
 void Display::init(int argc, char** argv)
 {
-	srand (time(NULL));
+	srand(time(NULL));
 	
 	// constructing structure using links
     for(int i = 1; i <= 5; i++){
