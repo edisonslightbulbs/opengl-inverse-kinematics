@@ -1,7 +1,7 @@
 #include "arm.h"
 #include <cmath>
 #include <iostream>
-#include "link.h"
+#include "limb.h"
 
 #define degrees(x) x*180/3.1415926
 
@@ -18,28 +18,28 @@ MatrixXf Arm::pseudoInverse()
 void Arm::calculatePosition()
 {
     float angle = 0;
-    mPosition = VectorXf::Zero(2,1);
+    currentPosition = VectorXf::Zero(2,1);
 
     // computing new position similar to jacobian construction
-    for (int i = 0; i < mList.size(); i++){
-        angle += mList[i]->mAngle;
-        mPosition(0) += mList[i]->mLength*cos(angle);
-        mPosition(1) += -mList[i]->mLength*sin(angle);
+    for (int i = 0; i < limbs.size(); i++){
+        angle += limbs[i]->angle;
+        currentPosition(0) += limbs[i]->length*cos(angle);
+        currentPosition(1) += -limbs[i]->length*sin(angle);
     }
 }
 
 MatrixXf Arm::jacobian()
 {
   // constructing the jacobian for the linked structure
-    MatrixXf j = MatrixXf::Zero(2,mList.size());
+    MatrixXf j = MatrixXf::Zero(2,limbs.size());
 
-    for (int col = 0; col < mList.size(); col++){
+    for (int col = 0; col < limbs.size(); col++){
         float angle = 0;
-        for (int i = 0; i < mList.size(); i++){
-            angle += mList[i]->mAngle;
+        for (int i = 0; i < limbs.size(); i++){
+            angle += limbs[i]->angle;
             if (i >= col){
-                j(0, col) += (-mList[i]->mLength*sin(angle));
-                j(1, col) += (mList[i]->mLength*cos(angle));
+                j(0, col) += (-limbs[i]->length*sin(angle));
+                j(1, col) += (limbs[i]->length*cos(angle));
             }
         }
     }
@@ -49,8 +49,8 @@ MatrixXf Arm::jacobian()
 void Arm::moveToPoint(const VectorXf position)
 {
   // specifying the new position and indicate that an update is now true
-  mTargetPosition = position;
-  mResolveTarget = true;
+  targetPosition = position;
+  resolveTarget = true;
 }
 
 /* n.b. :: 
@@ -65,20 +65,20 @@ void Arm::moveToPoint(const VectorXf position)
  * of objects, and easily reverse the transformations so that they don't affect other objects.
  */
 
-void Arm::draw() // drawing the arm position   << Review as at 28. August 2018
+void Arm::draw() 
 {
     glPushMatrix();  // Creates matrix 1 on the top
-    glTranslatef(mBasePosition(0),mBasePosition(1),0.0f);  // Applies translation to matrix 1
-    glutSolidSphere(2.0f, 20, 20);  // Draws a sphere with translation <2.0f, 20, 20>
+    glTranslatef(armBase(0),armBase(1),0.0f);  // Applies translation to matrix 1
+	glutSolidSphere(3.0f, 8, 8);  // base | root joint
 
     // represent the joints by a sphere (on the tips of every arm-structure)
-    for (int i = 0; i < mList.size(); i++){
-        glRotatef(degrees(mList[i]->mAngle), 1.0f, 0.0f, 0.0f);
-		mList[i]->mColor.apply();
-        gluCylinder(mList[i]->mObj, 1, 1, mList[i]->mLength, 20, 20);
-        glTranslatef(0, 0, mList[i]->mLength);
-		Color c = { 1.0, 0, 0};
-		c.apply();
+    for (int i = 0; i < limbs.size(); i++){
+        glRotatef(degrees(limbs[i]->angle), 1.0f, 0.0f, 0.0f);
+		limbs[i]->color.apply();
+        gluCylinder(limbs[i]->mObj, 1, 1, limbs[i]->length, 20, 20);
+        glTranslatef(0, 0, limbs[i]->length);
+		glColor color = {0.5f, 0.5f, 0.5f};
+		color.apply();
 	
 		// drawing the sphere-joints
         glutSolidSphere(1.5, 20, 20);
@@ -89,37 +89,35 @@ void Arm::draw() // drawing the arm position   << Review as at 28. August 2018
 void Arm::moveBy(float dx, float dy)
 {
 	// Here we move by dx an dy the linked structure's tip
-    VectorXf dAngles = VectorXf::Zero(mList.size(), 1);
-    VectorXf dPosition = VectorXf::Zero(2, 1);
+    VectorXf angleDifferential = VectorXf::Zero(limbs.size(), 1);
+    VectorXf positionDifferential = VectorXf::Zero(2, 1);
 
-	dPosition(0) = dx;
-	dPosition(1) = dy;
+	positionDifferential(0) = dx;
+	positionDifferential(1) = dy;
   
-    dAngles = pseudoInverse() * dPosition;
+    angleDifferential = pseudoInverse() * positionDifferential;
     
     // Adding the difference required to move to the new position to the angles
-    for (int i = 0; i < mList.size(); i++){
-        mList[i]->mAngle += dAngles(i);
+    for (int i = 0; i < limbs.size(); i++){
+        limbs[i]->angle += angleDifferential(i);
 	}
     calculatePosition();
 }
 
 void Arm::update()
 {
-  // updating the arm-structure
   if(isTargetResolved()) return;
   
-   float x = (mTargetPosition(0) - mPosition(0) > 1) ? mStep : -mStep;
-   float y = (mTargetPosition(1) + mPosition(1) > 1) ? mStep : -mStep;
+  float x = (targetPosition(0) - currentPosition(0) > 1) ? effectorStep : -effectorStep;
+  float y = (targetPosition(1) + currentPosition(1) > 1) ? effectorStep : -effectorStep;
 
   moveBy(x, y);
 }
 
 bool Arm::isTargetResolved()
 {
-  // verify that the current possition is the target position
-  if(fabs(mPosition(0) - mTargetPosition(0)) <= 2.0f && fabs(mPosition(1) + mTargetPosition(1)) <= 2.0f){
-      mResolveTarget = false;
+  if(fabs(currentPosition(0) - targetPosition(0)) <= 2.0f && fabs(currentPosition(1) + targetPosition(1)) <= 2.0f){
+      resolveTarget = false;
       return true;
   }
   return false;
@@ -127,14 +125,13 @@ bool Arm::isTargetResolved()
 
 VectorXf Arm::getPointWithinRange()
 {
-  // Returning a random point within the range that the linkedstructure
-  // can reach. This method is just for demo purposes
+  // Returning a random point within range of the arm
    VectorXf point = VectorXf::Zero(2, 1);
    float length = 0;
-   for(int i = 0; i < mList.size(); i++){
-     length += mList[i]->mLength;
+   for(int i = 0; i < limbs.size(); i++){
+     length += limbs[i]->length;
    }
-   
+
    point(0) = ((rand() % 2 == 0) ? -1 : 1) * (rand() % (int)(length*0.7));
    point(1) = ((rand() % 2 == 0) ? -1 : 1) * (rand() % (int)(length*0.7));
    

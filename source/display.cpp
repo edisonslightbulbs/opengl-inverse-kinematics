@@ -1,6 +1,6 @@
 #include "display.h"
 
-#include "link.h"
+#include "limb.h"
 #include "arm.h"
 
 
@@ -22,8 +22,9 @@ using namespace Eigen;
 using namespace std;
 
 
-Arm arm;  // arm instance
-Vector2f targetPoint = Vector2f::Zero();  //target point --- ideally at a later stage the target point should be ditermined by the position of the mouse
+Arm arm; 
+Vector2f targetPoint = Vector2f::Zero();  
+//todo: target point should be ditermined by the position of the mouse
 
 
 // window size
@@ -34,11 +35,11 @@ int32_t height = 400;
 double x_mouse = 0.5;
 double y_mouse = 0.5;
 
-// viewing frustum.
+// frustum
 float nearPlane =  1.0;
 float farPlane  = 1000.0;
 
-// viewing angle.
+// viewing angle
 double fovy = 40.0;
 
 
@@ -65,7 +66,7 @@ void glut_mouse(int32_t state, int32_t _x, int32_t _y)
 
 void glut_update()
 {
-	glutPostRedisplay();
+	glutPostRedisplay(); // mark current window for redisplaying
 }
 
 
@@ -84,19 +85,21 @@ void glut_motion(int32_t _x, int32_t _y)
 	x_mouse = double(_x) / double(width);
 	y_mouse = 1 - double(_y) / double(height);
 
-	glutPostRedisplay();  // redisplaying image.
+	glutPostRedisplay();  // mark current window for redisplaying
 }
 
 
 void glut_timer(int32_t i) // 10ms call
 {
+	// per pre-defined-delay-interval progressively
+	// resolve the end effector target position
 	arm.update();
 	if (arm.isTargetResolved()){ 
 		targetPoint = arm.getPointWithinRange(); arm.moveToPoint(targetPoint); 
 	}
 
 	glutTimerFunc(10, glut_timer, i);
-	glutPostRedisplay();
+	glutPostRedisplay(); // mark current window for redisplaying
 }
 
 
@@ -129,13 +132,13 @@ void glut_display()
     alpha = 180.0 * y_mouse;
     glRotatef(beta, 1, 0, 0);
 
-    // draw on window
+    // visual update of the IK chain:
 	arm.draw();
 
     glPushMatrix();
-    glColor3f(0.0f, 0.0f, 1.0f);
+    glColor3f(1.0f, 1.0f, 1.0f); 
     glTranslatef(0, -targetPoint(1), targetPoint(0));
-    glutSolidSphere(3.0f, 8, 8);
+	glutWireSphere(3.0f, 8, 8);  // end-effector target sphere
     glPopMatrix();
 
     glFlush();
@@ -143,17 +146,17 @@ void glut_display()
 }
 
 
-void Display::init(int argc, char** argv)
+void Display::init(int argc, char** argv, int limbs)
 {
 	srand(time(NULL));
 	
-	// constructing structure using links
-    for(int i = 1; i <= 5; i++){
-		Color c = { 1.0f, 1.0f, 1.0f, 1.0f };
-        Link *l = new Link(c);
-        l->mAngle = 3.14f/4;
-        l->mLength = 20;
-        ::arm.addLink(l);
+	// specification for construction of the arm 
+    for(int i = 1; i <= limbs; i++){
+		glColor color = { 1.0f, 1.0f, 1.0f, 0.5f };
+        Limb *limb = new Limb(color);
+        limb-> angle = 3.14f/4;
+        limb-> length = 20;
+        ::arm.addLimb(limb);
     }
 
     // GLUT initialization.

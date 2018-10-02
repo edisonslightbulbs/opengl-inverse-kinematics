@@ -7,7 +7,7 @@ public:
 	Display();
 	virtual ~Display();
 
-	void init(int argc, char** argv);
+	void init(int argc, char** argv, int limbs);
 };
 
 #endif //DISPLAY_H

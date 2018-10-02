@@ -8,7 +8,7 @@
 
 #include <GL/gl.h>
 
-struct Color
+struct glColor
 {
   float r;
   float g;

@@ -1,5 +1,5 @@
-#ifndef LINK_H
-#define LINK_H
+#ifndef JOINT_H
+#define JOINT_H
 
 #ifdef WIN32
  #define NOMINMAX
@@ -10,24 +10,24 @@
 #include <vector>
 #include "color.h"
 
-class Link
+class Limb
 {
 public:
   
-    Link(Color c)
+    Limb(glColor c)
     {
         mObj = gluNewQuadric();
         gluQuadricDrawStyle(mObj, GLU_FILL);
         gluQuadricOrientation(mObj, GLU_OUTSIDE);
         gluQuadricNormals(mObj, GLU_SMOOTH);
 	
-	mColor = c;
+	color = c;
     }
     
-    float mLength;
-    float mAngle;
+    float length;
+    float angle;
     GLUquadricObj *mObj;
-    Color mColor;
+    glColor color;
 };
 
-#endif // LINK_H
+#endif // JOINT_H
