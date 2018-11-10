@@ -117,6 +117,7 @@ void glut_display()
 {
 	glEnable(GL_LIGHTING);
   	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
@@ -152,7 +153,7 @@ void Display::init(int argc, char** argv, int limbs)
 	
 	// specification for construction of the arm 
     for(int i = 1; i <= limbs; i++){
-		glColor color = { 1.0f, 1.0f, 1.0f, 0.5f };
+		glColor color = { 0.5f, 0.5f, 0.5f, 0.5f };
         Limb *limb = new Limb(color);
         limb-> angle = 3.14f/4;
         limb-> length = 20;
