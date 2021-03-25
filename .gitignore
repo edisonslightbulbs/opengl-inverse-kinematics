@@ -1,0 +1,7 @@
+*.log
+.idea/
+build/
+cmake-build-debug/
+*.ply
+*.csv
+*.png
