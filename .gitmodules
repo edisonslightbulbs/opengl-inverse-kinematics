@@ -1,0 +1,3 @@
+[submodule "libs/glad"]
+	path = libs/glad
+	url = git@github.com:edisonslightbulbs/glad.git
